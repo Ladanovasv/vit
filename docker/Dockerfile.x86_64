@@ -1,0 +1,36 @@
+FROM nvcr.io/nvidia/cuda:11.1.1-devel-ubuntu20.04
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# Install system dependencies for convinient development inside container
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
+    git \
+    tmux \
+    curl \
+    wget \
+    build-essential \
+    sudo \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Install PyTorch
+RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install torch torchvision pytorch-lightning wandb
+RUN python3 -m pip install -U albumentations
+
+
+
+# add user and his password
+ARG USER=user
+ARG UID=1021
+ARG GID=1022
+# default password
+ARG PW=user
+
+ENV PYTHONPATH=/home/${USER}/catkin_ws/src:${PYTHONPATH}
+
+RUN useradd -m ${USER} --uid=${UID} && echo "${USER}:${PW}" | chpasswd && adduser ${USER} sudo
+WORKDIR /home/${USER}
+RUN mkdir -p catkin_ws/src && chown -R ${UID}:${GID} /home/${USER}
+USER ${UID}:${GID}
